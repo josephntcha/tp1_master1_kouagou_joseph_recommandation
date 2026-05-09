@@ -8,8 +8,8 @@ import streamlit as st
 # ─────────────────────────────────────────
 @st.cache_data
 def load_data():
-    movies  = pd.read_csv(r"C:\tp1_recommandation\ml-latest-small\movies.csv")
-    ratings = pd.read_csv(r"C:\tp1_recommandation\ml-latest-small\ratings.csv")
+    movies  = pd.read_csv("ml-latest-small/movies.csv")
+    ratings = pd.read_csv("ml-latest-small/ratings.csv")
     return movies, ratings
 
 @st.cache_data
