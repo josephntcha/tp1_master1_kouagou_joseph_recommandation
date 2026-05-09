@@ -8,13 +8,12 @@ def load_data():
     movies  = pd.read_csv("ml-latest-small/movies.csv")
     ratings = pd.read_csv("ml-latest-small/ratings.csv")
 
-  
     movie_counts = ratings['movieId'].value_counts()
-    popular_movies = movie_counts[movie_counts >= 30].index
+    popular_movies = movie_counts[movie_counts >= 50].index
     ratings = ratings[ratings['movieId'].isin(popular_movies)]
 
     user_counts = ratings['userId'].value_counts()
-    active_users = user_counts[user_counts >= 50].index
+    active_users = user_counts[user_counts >= 100].index
     ratings = ratings[ratings['userId'].isin(active_users)]
 
     return movies, ratings
@@ -22,7 +21,6 @@ def load_data():
 @st.cache_data
 def build_model():
     movies, ratings = load_data()
-
 
     user_item = ratings.pivot_table(
         index="userId",
@@ -61,17 +59,14 @@ st.title("🎬 Système de Recommandation de Films")
 st.subheader("Collaborative Filtering — Item-Item Top-N")
 st.markdown("---")
 
-
 with st.spinner("Chargement des données et calcul des similarités..."):
     movies, item_sim_df = build_model()
-
 
 available_ids = item_sim_df.columns.tolist()
 available_movies = movies[movies["movieId"].isin(available_ids)]
 
 st.success(f"✅ {len(movies)} films chargés — Matrice de similarité construite !")
 st.markdown("---")
-
 
 col1, col2 = st.columns([2, 1])
 
@@ -84,12 +79,9 @@ with col1:
 with col2:
     n = st.slider("🔢 Nombre de recommandations :", 5, 20, 10)
 
-
 if st.button("🚀 Recommander", type="primary"):
     movie_id = movies[movies["title"] == selected_movie]["movieId"].values[0]
-
     st.markdown(f"### Films similaires à **{selected_movie}** :")
-
     recs = recommend(movie_id, item_sim_df, movies, n)
 
     if recs.empty:
