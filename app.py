@@ -22,6 +22,10 @@ def load_data():
 def build_model():
     movies, ratings = load_data()
 
+    # Limiter à 200 films les plus populaires
+    top_movies = ratings['movieId'].value_counts().head(200).index
+    ratings = ratings[ratings['movieId'].isin(top_movies)]
+
     user_item = ratings.pivot_table(
         index="userId",
         columns="movieId",
