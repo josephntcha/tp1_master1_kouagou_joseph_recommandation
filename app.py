@@ -3,27 +3,33 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import streamlit as st
 
-# ─────────────────────────────────────────
-# CHARGEMENT DES DONNÉES
-# ─────────────────────────────────────────
 @st.cache_data
 def load_data():
     movies  = pd.read_csv("ml-latest-small/movies.csv")
     ratings = pd.read_csv("ml-latest-small/ratings.csv")
+
+  
+    movie_counts = ratings['movieId'].value_counts()
+    popular_movies = movie_counts[movie_counts >= 30].index
+    ratings = ratings[ratings['movieId'].isin(popular_movies)]
+
+    user_counts = ratings['userId'].value_counts()
+    active_users = user_counts[user_counts >= 50].index
+    ratings = ratings[ratings['userId'].isin(active_users)]
+
     return movies, ratings
 
 @st.cache_data
 def build_model():
     movies, ratings = load_data()
 
-    # Matrice utilisateur-item
+
     user_item = ratings.pivot_table(
         index="userId",
         columns="movieId",
         values="rating"
     ).fillna(0)
 
-    # Similarité cosinus Item-Item
     item_sim = cosine_similarity(user_item.T)
     item_sim_df = pd.DataFrame(
         item_sim,
@@ -32,9 +38,6 @@ def build_model():
     )
     return movies, item_sim_df
 
-# ─────────────────────────────────────────
-# FONCTION DE RECOMMANDATION TOP-N
-# ─────────────────────────────────────────
 def recommend(movie_id, item_sim_df, movies, n=10):
     if movie_id not in item_sim_df.columns:
         return pd.DataFrame()
@@ -48,9 +51,6 @@ def recommend(movie_id, item_sim_df, movies, n=10):
     result = result.sort_values("similarite", ascending=False)
     return result[["title", "genres", "similarite"]]
 
-# ─────────────────────────────────────────
-# INTERFACE STREAMLIT
-# ─────────────────────────────────────────
 st.set_page_config(
     page_title="Système de Recommandation",
     page_icon="🎬",
@@ -61,26 +61,30 @@ st.title("🎬 Système de Recommandation de Films")
 st.subheader("Collaborative Filtering — Item-Item Top-N")
 st.markdown("---")
 
-# Chargement
+
 with st.spinner("Chargement des données et calcul des similarités..."):
     movies, item_sim_df = build_model()
+
+
+available_ids = item_sim_df.columns.tolist()
+available_movies = movies[movies["movieId"].isin(available_ids)]
 
 st.success(f"✅ {len(movies)} films chargés — Matrice de similarité construite !")
 st.markdown("---")
 
-# Colonnes
+
 col1, col2 = st.columns([2, 1])
 
 with col1:
     selected_movie = st.selectbox(
         "🎥 Choisissez un film :",
-        movies["title"].sort_values().tolist()
+        available_movies["title"].sort_values().tolist()
     )
 
 with col2:
     n = st.slider("🔢 Nombre de recommandations :", 5, 20, 10)
 
-# Bouton recommander
+
 if st.button("🚀 Recommander", type="primary"):
     movie_id = movies[movies["title"] == selected_movie]["movieId"].values[0]
 
