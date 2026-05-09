@@ -7,9 +7,14 @@ import streamlit as st
 # CHARGEMENT DES DONNÉES
 # ─────────────────────────────────────────
 @st.cache_data
+@st.cache_data
 def load_data():
     movies  = pd.read_csv("ml-latest-small/movies.csv")
     ratings = pd.read_csv("ml-latest-small/ratings.csv")
+    user_counts = ratings['userId'].value_counts()
+    active_users = user_counts[user_counts >= 50].index
+    ratings = ratings[ratings['userId'].isin(active_users)]
+    
     return movies, ratings
 
 @st.cache_data
